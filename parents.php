@@ -16,6 +16,7 @@
     $page         = optional_param('page', 0, PARAM_INT);                     // which page to show
     $perpage      = optional_param('perpage', DEFAULT_PAGE_SIZE, PARAM_INT);  // how many per page
     $mode         = optional_param('mode', NULL, PARAM_INT);                  // use the MODE_ constants
+    $accesssince  = optional_param('accesssince',0,PARAM_INT);                // filter by last access. -1 = never
     $search       = optional_param('search','',PARAM_RAW);                    // make sure it is processed with p() or s() when sending to output!
     $roleid       = optional_param('roleid', 0, PARAM_INT);                   // optional roleid, 0 means all enrolled users (or all on the frontpage)
 
@@ -26,35 +27,31 @@
             'page' => $page,
             'perpage' => $perpage,
             'mode' => $mode,
+            'accesssince' => $accesssince,
             'search' => $search,
             'roleid' => $roleid,
             'contextid' => $contextid,
             'id' => $courseid));
 
     if ($contextid) {
-        //$context = get_context_instance_by_id($contextid, MUST_EXIST);
-        $context = context::instance_by_id($contextid);
+        $context = context::instance_by_id($contextid, MUST_EXIST);
         if ($context->contextlevel != CONTEXT_COURSE) {
             print_error('invalidcontext');
         }
         $course = $DB->get_record('course', array('id'=>$context->instanceid), '*', MUST_EXIST);
     } else {
         $course = $DB->get_record('course', array('id'=>$courseid), '*', MUST_EXIST);
-        //$context = get_context_instance(CONTEXT_COURSE, $course->id, MUST_EXIST);
-        $context = context_course::instance($course->id);
+        $context = context_course::instance($course->id, MUST_EXIST);
     }
     // not needed anymore
     unset($contextid);
     unset($courseid);
 
-    // Check for login, and access to the course
     require_login($course);
 
-    //$systemcontext = get_context_instance(CONTEXT_SYSTEM);
     $systemcontext = context_system::instance();
     $isfrontpage = ($course->id == SITEID);
 
-    //$frontpagectx = get_context_instance(CONTEXT_COURSE, SITEID);
     $frontpagectx = context_course::instance(SITEID);
 
     if ($isfrontpage) {
@@ -96,7 +93,16 @@
         }
     }
 
-    add_to_log($course->id, 'user', 'view all', 'parents.php?id='.$course->id, '');
+    $event = \core\event\user_list_viewed::create(array(
+        'context' => $context,
+        'objectid' => $course->id,
+        'other' => array(
+            'courseid' => $course->id,
+            'courseshortname' => $course->shortname,
+            'coursefullname' => $course->fullname
+        )
+    ));
+    $event->trigger();
 
     $bulkoperations = has_capability('moodle/course:bulkmessaging', $context);
 
@@ -140,10 +146,11 @@
     $PAGE->set_pagetype('course-view-' . $course->format);
     $PAGE->add_body_class('path-user');                     // So we can style it independently
     $PAGE->set_other_editing_capability('moodle/course:manageactivities');
+    $PAGE->requires->css('/local/parents/styles.css');
 
     echo $OUTPUT->header();
 
-    echo '<div class="userlist">';
+    echo '<div class="userlist parentlist">';
 
     if ($isseparategroups and (!$currentgroup) ) {
         // The user is not in the group so show message and exit
@@ -159,6 +166,7 @@
             'roleid' => $roleid,
             'id' => $course->id,
             'perpage' => $perpage,
+            'accesssince' => $accesssince,
             'search' => s($search)));
 
 /// setting up tags
@@ -192,7 +200,6 @@
         $courselist = array();
         $popupurl = new moodle_url('/local/parents/parents.php?roleid='.$roleid.'&sifirst=&silast=');
         foreach ($mycourses as $mycourse) {
-            //$coursecontext = get_context_instance(CONTEXT_COURSE, $mycourse->id);
             $coursecontext = context_course::instance($mycourse->id);
             $courselist[$mycourse->id] = format_string($mycourse->shortname, true, array('context' => $coursecontext));
         }
@@ -201,7 +208,6 @@
         $controlstable->data[0]->cells[] = $OUTPUT->render($select);
     }
 
-    // Display drop-down list menu to select listing format (brief or detail)
     $controlstable->data[0]->cells[] = groups_print_course_menu($course, $baseurl->out(), true);
 
     $formatmenu = array( '0' => get_string('brief'),
@@ -244,12 +250,12 @@
             }
         }
     }
-    /// Define a table showing a list of users in the current role selection
 
-    //$extraenfantfields = array( 'enfantfullname', 'enfantemail', 'enfantusername', 'enfantdepartment', 'enfantinstitution');
-    $extraenfantfields = array( 'enfantfullname', 'enfantemail', 'enfantusername');
-    //$extraenfantfieldsdesc = array( 'enfantfullname' => get_string('enfantfullname','local_parents'), 'enfantemail' => get_string('enfantemail','local_parents'), 'enfantusername' => get_string('enfantusername','local_parents'), 'enfantdepartment' => get_string('enfantdepartment','local_parents'), 'enfantinstitution' => get_string('enfantinstitution','local_parents'));
-    $extraenfantfieldsdesc = array( 'enfantfullname' => get_string('enfantfullname','local_parents'), 'enfantemail' => get_string('enfantemail','local_parents'), 'enfantusername' => get_string('enfantusername','local_parents'));
+    /// Define a table showing a list of users in the current role selection
+    //$extrachildfields = array( 'childfullname', 'childemail', 'childusername', 'childdepartment', 'childinstitution');
+    $extrachildfields = array( 'childfullname', 'childemail', 'childusername');
+    //$extrachildfieldsdesc = array( 'childfullname' => get_string('childfullname','local_parents'), 'childemail' => get_string('childemail','local_parents'), 'childusername' => get_string('childusername','local_parents'), 'childdepartment' => get_string('childdepartment','local_parents'), 'childinstitution' => get_string('childinstitution','local_parents'));
+    $extrachildfieldsdesc = array( 'childfullname' => get_string('childfullname','local_parents'), 'childemail' => get_string('childemail','local_parents'), 'childusername' => get_string('childusername','local_parents'));
 
     $tablecolumns = array('fullname');
     $extrafields = get_extra_user_fields($context);
@@ -260,9 +266,9 @@
             $tablecolumns[] = $field;
             $tableheaders[] = get_user_field_name($field);
         }
-        foreach ($extraenfantfields as $field) {
+        foreach ($extrachildfields as $field) {
             $tablecolumns[] = $field;
-            $tableheaders[] = $extraenfantfieldsdesc[$field];
+            $tableheaders[] = $extrachildfieldsdesc[$field];
         }
     }
 
@@ -300,43 +306,35 @@
                 ));
     $table->setup();
 
-    // we are looking for all users with this role assigned in this context or higher
-    //$contextlist = get_related_contexts_string($context);
-    $contextlist = $context->get_parent_context_ids(true);
-
     list($esql, $params) = get_enrolled_sql($context, NULL, $currentgroup, true);
     $joins = array("FROM {user} u");
     $wheres = array();
 
-    $extrasql = get_extra_user_fields_sql($context, 'u', '', array(
-            'id', 'username', 'firstname', 'lastname', 'email', 
-            'picture', 'lang', 'timezone', 'maildisplay', 'imagealt'));
-
     // performance hacks - we preload user contexts together with accounts
-    //list($ccselect, $ccjoin) = context_instance_preload_sql('u.id', CONTEXT_USER, 'ctx');
-    //list($ccselect, $ccjoin) = context_helper::get_preload_record_columns_sql('u.id', CONTEXT_USER, 'ctx');
-    //list($ccselect, $ccjoin) = context_helper::preload_from_record('u.id', CONTEXT_USER, 'ctx');
     $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
     $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = u.id AND ctx.contextlevel = :contextlevel)";
     $params['contextlevel'] = CONTEXT_USER;
     $joins[] = $ccjoin;
 
-    $select = "SELECT parent.id, parent.username, parent.firstname, parent.lastname,
-                      parent.email, parent.picture,
-                      parent.lang, parent.timezone, parent.maildisplay, parent.imagealt,
-		      u.id AS enfantid, u.username AS enfantusername,". $DB->sql_fullname('u.firstname','u.lastname')." AS enfantfullname,
-                      u.email AS enfantemail, u.department AS enfantdepartment, u.institution AS enfantinstitution";
+    $getnamestring = 'parent.firstname, parent.lastname';
+        
+    if($CFG->version >= 2013111800){
+           $getnamestring = get_all_user_name_fields(true, 'parent');
+    }
+    $select = "SELECT parent.id, parent.username, $getnamestring,
+                      parent.email, parent.city, parent.country, parent.picture,
+                      parent.lang, parent.timezone, parent.maildisplay, parent.imagealt, parent.lastaccess,
+		      u.id AS childid, u.username AS childusername,". $DB->sql_fullname('u.firstname','u.lastname')." AS childfullname,
+                      u.email AS childemail, u.department AS childdepartment, u.institution AS childinstitution";
     $joins[] = "JOIN ($esql) e ON e.id = u.id"; // course enrolled users only
- //   $joins[] = "LEFT JOIN {context} ctx ON (ctx.instanceid = u.id)"; // Context
-    $joins[] = "LEFT JOIN {role_assignments} ra ON (ra.contextid = ctx.id)"; // 
+    $joins[] = "LEFT JOIN {role_assignments} ra ON (ra.contextid = ctx.id)";
     $joins[] = "LEFT JOIN {role} r ON (ra.roleid = r.id)"; // Context
-    $joins[] = "JOIN {user} parent ON (ra.userid = parent.id)"; // 
-    $params['courseid'] = $course->id;
+    $joins[] = "JOIN {user} parent ON (ra.userid = parent.id)";
 
     $select .= $ccselect;
 
     // Patch pas propre pour enlever les doublons cause par les comptes pXXXXXXX
-    $wheres[] = "parent.id IN (select pu.id from {user} pu where pu.email = parent.email order by length(pu.username) desc limit 1)";
+    // $wheres[] = "parent.id IN (select pu.id from {user} pu where pu.email = parent.email order by length(pu.username) desc limit 1)";
 
     // limit list to users with some role only
     if ($roleid) {
@@ -417,6 +415,11 @@
             $heading .= ' ' . format_string(get_string('ingroup', 'role', $a));
         }
 
+        if ($accesssince) {
+            $a->timeperiod = $timeoptions[$accesssince];
+            $heading .= ' ' . format_string(get_string('inactiveformorethan', 'role', $a));
+        }
+
         $heading .= ": $a->number";
 
         //if (user_can_assign($context, $roleid)) {
@@ -427,7 +430,7 @@
     } else {
         if ($course->id != SITEID && has_capability('moodle/course:enrolreview', $context)) {
             $editlink = $OUTPUT->action_icon(new moodle_url('/enrol/users.php', array('id' => $course->id)),
-                                             new pix_icon('i/edit', get_string('edit')));
+                                             new pix_icon('t/edit', get_string('edit')));
         } else {
             $editlink = '';
         }
@@ -445,14 +448,14 @@
 
 
     if ($bulkoperations) {
-        echo '<form action="/moodle/user/action_redir.php" method="post" id="participantsform">';
+        echo '<form action="../../user/action_redir.php" method="post" id="participantsform">';
         echo '<div>';
         echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
         echo '<input type="hidden" name="returnto" value="'.s($PAGE->url->out(false)).'" />';
     }
 
     if ($mode === MODE_USERDETAILS) {    // Print simple listing
-//echo 'MODE_USERDETAILS......';
+        // echo 'MODE_USERDETAILS......';
         if ($totalcount < 1) {
             echo $OUTPUT->heading(get_string('nothingtodisplay'));
         } else {
@@ -463,7 +466,7 @@
                 $strall = get_string('all');
                 $alpha  = explode(',', get_string('alphabet', 'langconfig'));
 
-/* MAXP Pas capable de faire fonctionner le tri sur premiere lettre
+                /* MAXP Pas capable de faire fonctionner le tri sur premiere lettre
                 // Bar of first initials
 
                 echo '<div class="initialbar firstinitial">'.get_string('firstname').' : ';
@@ -497,12 +500,13 @@
                     }
                 }
                 echo '</div>';
-====================== */
+                */
 
                 $pagingbar = new paging_bar($matchcount, intval($table->get_page_start() / $perpage), $perpage, $baseurl);
                 $pagingbar->pagevar = 'spage';
                 echo $OUTPUT->render($pagingbar);
             }
+
             if ($matchcount > 0) {
                 $usersprinted = array();
                 foreach ($userlist as $user) {
@@ -511,12 +515,9 @@
                     }
                     $usersprinted[] = $user->id; /// Add new user to the array of users printed
 
-                    //context_instance_preload($user);
                     context_helper::preload_from_record($user);
 
-                    //$context = get_context_instance(CONTEXT_COURSE, $course->id);
                     $context = context_course::instance($course->id);
-                    //$usercontext = get_context_instance(CONTEXT_USER, $user->id);
                     $usercontext = context_user::instance($user->id);
 
                     /// Get the hidden field list
@@ -529,10 +530,10 @@
                     $table->attributes['class'] = 'userinfobox';
 
                     $row = new html_table_row();
-                    //$row->cells[0] = new html_table_cell();
-                    //$row->cells[0]->attributes['class'] = 'left side';
+                    /*$row->cells[0] = new html_table_cell();
+                    $row->cells[0]->attributes['class'] = 'left side';
 
-                    //$row->cells[0]->text = $OUTPUT->user_picture($user, array('size' => 100, 'courseid'=>$course->id));
+                    $row->cells[0]->text = $OUTPUT->user_picture($user, array('size' => 100, 'courseid'=>$course->id));*/
                     $row->cells[1] = new html_table_cell();
                     $row->cells[1]->attributes['class'] = 'content';
 
@@ -558,8 +559,8 @@
                                 get_string('labelsep', 'langconfig') . s($user->{$field}) . '<br />';
                     }
 
-                    foreach ($extraenfantfields as $field) {
-                        $row->cells[1]->text .= $extraenfantfieldsdesc[$field] .
+                    foreach ($extrachildfields as $field) {
+                        $row->cells[1]->text .= $extrachildfieldsdesc[$field] .
                                 get_string('labelsep', 'langconfig') . s($user->{$field}) . '<br />';
                     }
 
@@ -584,12 +585,12 @@
                         $links[] = html_writer::link(new moodle_url('/course/user.php?id='. $course->id .'&user='. $user->id), get_string('activity'));
                     }
 
-                    if ($USER->id != $user->id && !session_is_loggedinas() && has_capability('moodle/user:loginas', $context) && !is_siteadmin($user->id)) {
+                    if ($USER->id != $user->id && !\core\session\manager::is_loggedinas() && has_capability('moodle/user:loginas', $context) && !is_siteadmin($user->id)) {
                         $links[] = html_writer::link(new moodle_url('/course/loginas.php?id='. $course->id .'&user='. $user->id .'&sesskey='. sesskey()), get_string('loginas'));
                     }
 
                     $links[] = html_writer::link(new moodle_url('/user/view.php?id='. $user->id .'&course='. $course->id), get_string('fullprofile') . '...');
-*/
+                    */
                     $row->cells[2]->text .= implode('', $links);
 
                     if ($bulkoperations) {
@@ -605,9 +606,10 @@
         }
 
     } else {
-	// Print detailed listing
-//echo 'MODE_BRIEF......';
+        // Print detailed listing
+        //echo 'MODE_BRIEF......';
         $timeformat = get_string('strftimedate');
+
 
         if ($userlist)  {
 
@@ -618,10 +620,8 @@
                 }
                 $usersprinted[] = $user->id; /// Add new user to the array of users printed
 
-                //context_instance_preload($user);
                 context_helper::preload_from_record($user);
 
-                //$usercontext = get_context_instance(CONTEXT_USER, $user->id);
                 $usercontext = context_user::instance($user->id);
 
                 if ($piclink = ($USER->id == $user->id || has_capability('moodle/user:viewdetails', $context) || has_capability('moodle/user:viewdetails', $usercontext))) {
@@ -640,7 +640,7 @@
                     foreach ($extrafields as $field) {
                         $data[] = $user->{$field};
                     }
-                    foreach ($extraenfantfields as $field) {
+                    foreach ($extrachildfields as $field) {
                         $data[] = $user->{$field};
                     }
                 }
@@ -671,6 +671,7 @@
         }
 
         $table->print_html();
+
     }
 
     if ($bulkoperations) {
@@ -706,7 +707,7 @@
 
     $perpageurl = clone($baseurl);
     $perpageurl->remove_params('perpage');
-   /* if ($perpage == SHOW_ALL_PAGE_SIZE) {
+    /* if ($perpage == SHOW_ALL_PAGE_SIZE) {
         $perpageurl->param('perpage', DEFAULT_PAGE_SIZE);
         echo $OUTPUT->container(html_writer::link($perpageurl, get_string('showperpage', '', DEFAULT_PAGE_SIZE)), array(), 'showall');
 
