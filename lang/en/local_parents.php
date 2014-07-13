@@ -1,15 +1,29 @@
 <?php
+$string['backtoediting'] = 'Back to editing';
+$string['coursemessageparents'] = 'Message to parents of course users';
 $string['childdepartment'] = 'School';
 $string['childemail'] = 'Child email';
 $string['childfullname'] = 'Child full name';
 $string['childid'] = 'Child ID';
 $string['childinstitution'] = 'School name';
 $string['childusername'] = 'Child username';
+$string['defaultmessage'] = '<p>Hi,</p><p>Here is a report of your child\'s grades for the course {$a}.</p>';
+$string['defaultsubject'] = 'Your child\'s grades for the course {$a}';
+$string['emailgradesadd'] = 'Email grades to parents';
+$string['emailgradesfailure'] = 'Error sending notes of students by mail to selected parents.';
+$string['emailgradessuccess'] = 'Student grades were successfully sent by email to selected parents.';
+$string['gradestablefor'] = 'Here is the grades table for {$a}';
 $string['link_name'] = 'Link name';
 $string['link_name_desc'] = 'Link that appears in the tree';
-$string['parents'] = 'Parents';
+$string['noparentsselected'] = 'There is no parents selected.';
+$string['message'] = 'Message';
 $string['parent_role'] = 'Parent Role';
 $string['parent_role_desc'] = 'Role representing the parents';
+$string['parents'] = 'Parents';
 $string['pluginname'] = 'Liste des parents des participants';
-$string['pluginname_desc'] = 'Affiche la liste de tous les parents des participants d\'un cours';
+$string['pluginname_desc'] = 'Displays a list of all parents of participants of a course';
+$string['emailpreviewfor'] = 'Preview of email to';
+$string['signature'] = 'Signature';
+$string['subject'] = 'Subject';
+$string['usemessageformparents'] = 'or use the form below to send a message to the selected parents';
 

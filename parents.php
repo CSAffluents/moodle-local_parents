@@ -148,6 +148,9 @@
     $PAGE->set_other_editing_capability('moodle/course:manageactivities');
     $PAGE->requires->css('/local/parents/styles.css');
 
+    $link = new moodle_url("/local/parents/parents.php", array('id'=>$course->id));
+    $PAGE->navbar->add(get_string('parents', 'local_parents'), $link);
+
     echo $OUTPUT->header();
 
     echo '<div class="userlist parentlist">';
@@ -448,7 +451,7 @@
 
 
     if ($bulkoperations) {
-        echo '<form action="../../user/action_redir.php" method="post" id="participantsform">';
+        echo '<form action="action_redir.php" method="post" id="participantsform">';
         echo '<div>';
         echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
         echo '<input type="hidden" name="returnto" value="'.s($PAGE->url->out(false)).'" />';
@@ -510,6 +513,7 @@
             if ($matchcount > 0) {
                 $usersprinted = array();
                 foreach ($userlist as $user) {
+                    echo $user->id . "<br/>";
                     if (in_array($user->id, $usersprinted)) { /// Prevent duplicates by r.hidden - MDL-13935
                         continue;
                     }
@@ -680,10 +684,8 @@
         echo '<input type="button" id="checknone" value="'.get_string('deselectall').'" /> ';
         $displaylist = array();
         $displaylist['messageselect.php'] = get_string('messageselectadd');
-        if (!empty($CFG->enablenotes) && has_capability('moodle/notes:manage', $context) && $context->id != $frontpagectx->id) {
-            $displaylist['addnote.php'] = get_string('addnewnote', 'notes');
-            $displaylist['groupaddnote.php'] = get_string('groupaddnewnote', 'notes');
-        }
+        $displaylist['emailgrades.php'] = get_string('emailgradesadd', 'local_parents');
+        
 
         echo $OUTPUT->help_icon('withselectedusers');
         echo html_writer::tag('label', get_string("withselectedusers"), array('for'=>'formactionid'));
