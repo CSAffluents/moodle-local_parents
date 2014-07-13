@@ -12,22 +12,24 @@ defined('MOODLE_INTERNAL') || die();
 
 //if ($ADMIN->fulltree) {
 if ($hassiteconfig) {
-        $settings = new admin_settingpage('local_parents', get_string('pluginname', 'local_parents'));
-        $settings->add(new admin_setting_heading('local_parents_settings', '', get_string('pluginname_desc', 'local_parents')));
+    $settings = new admin_settingpage('local_parents', get_string('pluginname', 'local_parents'));
+    $settings->add(new admin_setting_heading('local_parents_settings', '', get_string('pluginname_desc', 'local_parents')));
 
-        //--- Link name
-        $settings->add(new admin_setting_configtext('local_parents/link_name', get_string('link_name', 'local_parents'), get_string('link_name_desc', 'local_parents'), 'Parents'));
+    //--- Link name
+    $settings->add(new admin_setting_configtext('local_parents/link_name', get_string('link_name', 'local_parents'), get_string('link_name_desc', 'local_parents'), 'Parents'));
 
-        //--- Role to display
-        //$options = get_default_enrol_roles(context_system::instance());
-        //$options = role_fix_names(get_all_roles());
+    //--- Role to display
+    //$options = get_default_enrol_roles(context_system::instance());
+    //$options = role_fix_names(get_all_roles());
+    // @TODO Find a way to retrieves only user context roles.
 	$options = array();
-        $roles = get_all_roles();
+    $roles = get_all_roles();
 	$parent = 0;
 	foreach ($roles as $role) {
-		$options[$role->id] = $role->name;
+		
 		// Looking for a parent role...
 		if (stripos( $role->name, 'parent') !== false) {
+            $options[$role->id] = $role->name;
 			$parent = $role->id;
 		}
 	}
