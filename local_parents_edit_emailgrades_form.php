@@ -143,7 +143,6 @@ class local_parents_edit_emailgrades_form extends moodleform {
         if ($gradeitems = $gseq->items) {
 
             $canviewhidden = has_capability('moodle/grade:viewhidden', context_course::instance($course->id));
-            $courseitem = grade_item::fetch_course_item($course->id);
 
             foreach ($gradeitems as $gradeitem) {
                 // Is the grade_item hidden? If so, can the user see hidden grade_items?
@@ -154,9 +153,9 @@ class local_parents_edit_emailgrades_form extends moodleform {
                 $mform->addElement('advcheckbox', 'itemids[' . $gradeitem->id . ']', $gradeitem->get_name(), null,
                         array('group' => 1));
 
-                $mform->setDefault('itemids[' . $gradeitem->id . ']', 1);
+                $mform->setDefault('itemids[' . $gradeitem->id . ']', 0);
             }
-            $mform->setDefault('itemids[' . $courseitem->id . ']', 0);
+            
         }
 
         $mform->addElement('hidden', 'itemsids');
@@ -165,5 +164,21 @@ class local_parents_edit_emailgrades_form extends moodleform {
         $mform->addElement('hidden', 'id', $course->id);
         $mform->setType('id', PARAM_INT);
         $this->add_action_buttons(true, get_string('preview'));
+    }
+
+    /**
+     * Check if at least one grading component is checked to validate the form.
+     *
+     * @param array $data array of ("fieldname"=>value) of submitted data
+     * @param array $files array of uploaded files "element_name"=>tmp_file_path
+     * @return array of "element_name"=>"error_description" if there are errors,
+     *         or an empty array if everything is OK (true allowed for backwards compatibility too).
+     */
+    public function validation($data, $files) {
+        if (empty(array_sum($data["itemids"]))) {
+            $firstgrades = "itemids[" . current(array_keys($data["itemids"])) . "]";
+            return array($firstgrades => get_string('nogradeselected', 'local_parents'));
+        }
+        return array();
     }
 }
