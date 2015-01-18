@@ -18,11 +18,9 @@
  * The local parents email grades class.
  *
  * @package   local_parents
- * @copyright 2014 Commission Scolaire des Affluents
- * @author    Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @copyright 2015 Gilles-Philippe Leblanc <contact@gpleblanc.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -64,6 +62,11 @@ class local_parents_emailgrades extends grade_export {
     private $signature;
 
     /**
+     * @var boolean If we show the max possible grade for a grade item.
+     */
+    private $showmaxgrade;
+
+    /**
      * Constructor should set up all the private variables ready to be pulled.
      *
      * @param object $course The course object containing the user grades to email.
@@ -75,15 +78,17 @@ class local_parents_emailgrades extends grade_export {
      * @param boolean $exportfeedback If the grades feedback has to be included in the email.
      * @param int $displaytype The grades display type of the grades in the email.
      * @param int $decimalpoints The number of decimal points of the grades in the email.
+     * @param boolean $showmaxgrade If we show the max possible grade for a grade item.
      */
     public function __construct($course, $from, $subject, $messageprefix, $signature, $parentlist = '', $itemlist = '',
-            $exportfeedback = false, $displaytype = GRADE_DISPLAY_TYPE_REAL, $decimalpoints = 2) {
+            $exportfeedback = false, $displaytype = GRADE_DISPLAY_TYPE_REAL, $decimalpoints = 2, $showmaxgrade = true) {
         parent::__construct($course, 0, $itemlist, $exportfeedback, false, $displaytype, $decimalpoints, false, false);
         $this->from = $from;
         $this->subject = $subject;
         $this->signature = $signature;
         $this->parentlist = $parentlist;
         $this->messageprefix = $messageprefix;
+        $this->showmaxgrade = $showmaxgrade;
     }
 
     /**
@@ -143,11 +148,11 @@ class local_parents_emailgrades extends grade_export {
      * @return array The list of user with their specific parents/mentors/tutors.
      */
     private function get_parents_message($parentid = null) {
-        global $OUTPUT;
 
         $exporttracking = $this->track_exports();
         $userswithparents = $this->get_course_users_by_parents_id();
         $parentsmessage = array();
+        $showallgrades = $this->showmaxgrade && $this->displaytype != GRADE_DISPLAY_TYPE_LETTER;
 
         // Print all the lines of data.
         $geub = new grade_export_update_buffer();
@@ -162,10 +167,16 @@ class local_parents_emailgrades extends grade_export {
             }
 
             $table = new html_table();
-            $head = array(get_string('gradeitems', 'grades'), get_string('grades', 'grades'));
+            $head = array(get_string('gradeitem', 'grades'), get_string('grade', 'grades'));
+
+            if ($showallgrades) {
+                $head[] = get_string('maxgrade', 'grades');
+            }
+
             if ($this->export_feedback) {
                 $head[] = get_string('feedback');
             }
+
             $table->head = $head;
             $table->data = array();
 
@@ -177,6 +188,11 @@ class local_parents_emailgrades extends grade_export {
                 $row = array();
                 $row[] = $this->format_column_name($gradeitem);
                 $row[] = $this->format_grade($userdata->grades[$itemid]);
+
+                if ($showallgrades) {
+                    $row[] = $this->format_max_grade($gradeitem);
+                }
+                
                 if ($this->export_feedback) {
                     $row[] = $this->format_feedback($userdata->feedbacks[$itemid]);
                 }
@@ -261,5 +277,64 @@ class local_parents_emailgrades extends grade_export {
             $users[$user->id][$parentid] = $parentid;
         }
         return $users;
+    }
+
+    /**
+     * Returns string representation of final grade.
+     * Override completely this method to add localized decimal separator
+     * and to add the scale position if the scale is used.
+     *
+     * @param grade_grade $grade instance of grade_grade class
+     * @return string The formatted grade.
+     */
+    public function format_grade($grade) {
+        $formattedgrade = grade_format_gradevalue($grade->finalgrade, $this->grade_items[$grade->itemid], true, $this->displaytype,
+                $this->decimalpoints);
+        $gradeitem = $this->grade_items[$grade->itemid];
+        if ($gradeitem->gradetype == GRADE_TYPE_SCALE) {
+            $formattedgrade = $this->format_with_scale_position($formattedgrade, $gradeitem);
+        }
+        return $formattedgrade;
+    }
+
+    /**
+     * Returns a string representing grademax for a grade item.
+     *
+     * @param grade_item $gradeitem The grade item.
+     * @return string The formatted max grade.
+     */
+    public function format_max_grade($gradeitem) {
+        if ($this->displaytype == GRADE_DISPLAY_TYPE_PERCENTAGE) {
+            $grademax = "100 %";
+        } else {
+            $grademax = grade_format_gradevalue($gradeitem->grademax, $gradeitem, true, $this->displaytype, $this->decimalpoints);
+            if ($gradeitem->gradetype == GRADE_TYPE_SCALE) {
+                $grademax = $this->format_with_scale_position($grademax, $gradeitem);
+            }
+        }
+        return $grademax;
+    }
+
+    /**
+     * Format a scale grade by adding its scale position.
+     * Ex: "quite acceptable (3)" instead of "quite acceptable".
+     *
+     * @param type $formattedgrade The formatted grade.
+     * @param type $gradeitem The grade item.
+     * @return string The formatted grade with position.
+     */
+    private function format_with_scale_position($formattedgrade, $gradeitem) {
+        global $DB;
+        $string = $formattedgrade;
+        if ($gradeitem->gradetype == GRADE_TYPE_SCALE && $formattedgrade != "-") {
+            $scale = $DB->get_record('scale', array('id' => $gradeitem->scaleid));
+            // If the item is using a scale that's not been removed.
+            if (!empty($scale)) {
+                $scaleitems = array_map('trim', explode(',', $scale->scale));
+                $key = array_search($formattedgrade, $scaleitems) + 1;
+                $string .= ' (' . $key . ')';
+            }
+        }
+        return $string;
     }
 }

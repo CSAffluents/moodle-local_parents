@@ -18,8 +18,7 @@
  * This file is part of the User section Moodle
  *
  * @package   local_parents
- * @copyright 2014 Commission Scolaire des Affluents
- * @author    Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @copyright 2015 Gilles-Philippe Leblanc <contact@gpleblanc.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -122,7 +121,7 @@ if (empty($action)) {
 
         $emailgrades = new local_parents_emailgrades($course, $data->from, $data->subject, $data->messageprefix,
                 $data->signature, $data->parentlist, $data->itemsids, $data->export_feedback, $data->display,
-                $data->decimals);
+                $data->decimals, $data->showmaxgrade);
 
         $data->message = $emailgrades->display_message_preview($firstemailid);
 
@@ -154,7 +153,7 @@ if ($emailgradesreviewform->is_cancelled()) {
 } else if ($data = $emailgradesreviewform->get_data()) {
     $emailgrades = new local_parents_emailgrades($course, $data->from, $data->subject, $data->messageprefix,
             $data->signature, $data->parentlist, $data->itemsids, $data->export_feedback, $data->display,
-            $data->decimals);
+            $data->decimals, $data->showmaxgrade);
 
     if (!isset($data->refreshpreview)) {
         echo $OUTPUT->header();

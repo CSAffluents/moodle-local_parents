@@ -18,8 +18,7 @@
  * The local parents email grades edit form.
  *
  * @package   local_parents
- * @copyright 2014 Commission Scolaire des Affluents
- * @author    Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @copyright 2015 Gilles-Philippe Leblanc <contact@gpleblanc.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -85,6 +84,10 @@ class local_parents_edit_emailgrades_form extends moodleform {
         $mform->addElement('select', 'decimals', get_string('gradeexportdecimalpoints', 'grades'), $options);
         $mform->setDefault('decimals', $CFG->grade_export_decimalpoints);
         $mform->disabledIf('decimals', 'display', 'eq', GRADE_DISPLAY_TYPE_LETTER);
+
+        $mform->addElement('advcheckbox', 'showmaxgrade', get_string('showmaxgrade', 'local_parents'));
+        $mform->setDefault('showmaxgrade', 1);
+        $mform->disabledIf('showmaxgrade', 'display', 'eq', GRADE_DISPLAY_TYPE_LETTER);
 
         $mform->addElement('header', 'currentlyselectedusers', get_string('currentlyselectedusers'));
 

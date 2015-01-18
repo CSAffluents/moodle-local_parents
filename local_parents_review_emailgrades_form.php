@@ -18,8 +18,7 @@
  * The local parents email grades review form.
  *
  * @package   local_parents
- * @copyright 2014 Commission Scolaire des Affluents
- * @author    Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @copyright 2015 Gilles-Philippe Leblanc <contact@gpleblanc.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -96,6 +95,9 @@ class local_parents_review_emailgrades_form extends moodleform {
 
         $mform->addElement('hidden', 'decimals');
         $mform->setType('decimals', PARAM_INT);
+
+        $mform->addElement('hidden', 'showmaxgrade');
+        $mform->setType('showmaxgrade', PARAM_BOOL);
 
         $mform->addElement('hidden', 'action', 'send');
         $mform->setType('action', PARAM_ALPHA);

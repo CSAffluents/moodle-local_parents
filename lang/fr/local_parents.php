@@ -24,6 +24,7 @@ $string['parents'] = 'Parents';
 $string['pluginname'] = 'Liste des parents des participants';
 $string['pluginname_desc'] = 'Affiche la liste de tous les parents des participants d\'un cours';
 $string['emailpreviewfor'] = 'Aperçu du courriel pour';
+$string['showmaxgrade'] = 'Afficher la note maximale';
 $string['signature'] = 'Signature';
 $string['subject'] = 'Objet';
 $string['usemessageformparents'] = 'ou utiliser le formulaire ci-dessous pour envoyer un message aux parents sélectionnés';
