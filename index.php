@@ -28,7 +28,7 @@ require_once($CFG->libdir.'/filelib.php');
 
 define('USER_SMALL_CLASS', 20);   // Below this is considered small
 define('USER_LARGE_CLASS', 200);  // Above this is considered large
-define('DEFAULT_PAGE_SIZE', 5000);
+define('DEFAULT_PAGE_SIZE', 3);
 define('SHOW_ALL_PAGE_SIZE', 5000);
 define('MODE_BRIEF', 0);
 define('MODE_USERDETAILS', 1);
@@ -43,7 +43,7 @@ $roleid       = optional_param('roleid', 0, PARAM_INT);                   // opt
 $contextid    = optional_param('contextid', 0, PARAM_INT);                // one of this or
 $courseid     = optional_param('id', 0, PARAM_INT);                       // this are required
 
-$PAGE->set_url('/local/parents/parents.php', array(
+$PAGE->set_url('/local/parents/index.php', array(
         'page' => $page,
         'perpage' => $perpage,
         'mode' => $mode,
@@ -81,18 +81,16 @@ if ($isfrontpage) {
     require_capability('moodle/course:viewparticipants', $context);
 }
 
-$rolenamesurl = new moodle_url("$CFG->wwwroot/local/parents/parents.php?contextid=$context->id&sifirst=&silast=");
+$rolenamesurl = new moodle_url("$CFG->wwwroot/local/parents/index.php?contextid=$context->id&sifirst=&silast=");
 
 $allroles = get_all_roles();
 $roles = get_profile_roles($context);
 $allrolenames = array();
-$rolenames = array(0=>get_string('allparticipants'));
+$rolenames = array(0 => get_string('allparents', 'local_parents'));
 
 foreach ($allroles as $role) {
     $allrolenames[$role->id] = strip_tags(role_get_name($role, $context));   // Used in menus etc later on
-    //if (isset($roles[$role->id])) {
-        $rolenames[$role->id] = $allrolenames[$role->id];
-    //}
+    $rolenames[$role->id] = $allrolenames[$role->id];
 }
 
 // On selectionne le role qui a ete defini dans la config.
@@ -100,29 +98,18 @@ $roleid = get_config('local_parents','parent_role');
 
 // Make sure other roles may not be selected by any means.
 if (empty($rolenames[$roleid])) {
-    print_error('noparticipants');
+    print_error('noparents', 'local_parents');
 }
 
 // No roles to display yet?
 // Frontpage course is an exception, on the front page course we should display all users.
-if (empty($rolenames) && !$isfrontpage) {
+if (empty($rolenames)) {
     if (has_capability('moodle/role:assign', $context)) {
-        redirect($CFG->wwwroot.'/'.$CFG->admin.'/roles/assign.php?contextid='.$context->id);
+        redirect($CFG->wwwroot.'/'.$CFG->admin.'/roles/assign.php?contextid=' . $context->id);
     } else {
-        print_error('noparticipants');
+        print_error('noparents', 'local_parents');
     }
 }
-
-$event = \core\event\user_list_viewed::create(array(
-    'context' => $context,
-    'objectid' => $course->id,
-    'other' => array(
-        'courseid' => $course->id,
-        'courseshortname' => $course->shortname,
-        'coursefullname' => $course->fullname
-    )
-));
-$event->trigger();
 
 $bulkoperations = has_capability('moodle/course:bulkmessaging', $context);
 
@@ -167,7 +154,7 @@ $PAGE->add_body_class('path-user');                     // So we can style it in
 $PAGE->set_other_editing_capability('moodle/course:manageactivities');
 $PAGE->requires->css('/local/parents/styles.css');
 
-$link = new moodle_url("/local/parents/parents.php", array('id'=>$course->id));
+$link = new moodle_url("/local/parents/index.php", array('id'=>$course->id));
 $PAGE->navbar->add(get_string('parents', 'local_parents'), $link);
 
 echo $OUTPUT->header();
@@ -183,7 +170,7 @@ if ($isseparategroups and (!$currentgroup) ) {
 
 
 // Should use this variable so that we don't break stuff every time a variable is added or changed.
-$baseurl = new moodle_url('/local/parents/parents.php', array(
+$baseurl = new moodle_url('/local/parents/index.php', array(
         'contextid' => $context->id,
         'roleid' => $roleid,
         'id' => $course->id,
@@ -192,9 +179,7 @@ $baseurl = new moodle_url('/local/parents/parents.php', array(
         'search' => s($search)));
 
 // Setting up tags.
-if ($course->id == SITEID) {
-    $filtertype = 'site';
-} else if ($course->id && !$currentgroup) {
+if ($course->id && !$currentgroup) {
     $filtertype = 'course';
     $filterselect = $course->id;
 } else {
@@ -220,7 +205,7 @@ $controlstable->data[] = new html_table_row();
 // Print my course menus when user is enrolled in courses.
 if ($mycourses = enrol_get_my_courses()) {
     $courselist = array();
-    $popupurl = new moodle_url('/local/parents/parents.php?roleid='.$roleid.'&sifirst=&silast=');
+    $popupurl = new moodle_url('/local/parents/index.php?roleid='.$roleid.'&sifirst=&silast=');
     foreach ($mycourses as $mycourse) {
         $coursecontext = context_course::instance($mycourse->id);
         $courselist[$mycourse->id] = format_string($mycourse->shortname, true, array('context' => $coursecontext));
@@ -280,10 +265,18 @@ $extrachildfields = array( 'childfullname', 'childemail', 'childusername');
 //$extrachildfieldsdesc = array( 'childfullname' => get_string('childfullname','local_parents'), 'childemail' => get_string('childemail','local_parents'), 'childusername' => get_string('childusername','local_parents'), 'childdepartment' => get_string('childdepartment','local_parents'), 'childinstitution' => get_string('childinstitution','local_parents'));
 $extrachildfieldsdesc = array( 'childfullname' => get_string('childfullname','local_parents'), 'childemail' => get_string('childemail','local_parents'), 'childusername' => get_string('childusername','local_parents'));
 
-$tablecolumns = array('fullname');
+$tablecolumns = array();
+$tableheaders = array();
+
+if ($bulkoperations && $mode === MODE_BRIEF) {
+    $tablecolumns[] = 'select';
+    $tableheaders[] = get_string('select');
+}
+
+$tablecolumns[] = 'fullname';
+$tableheaders[] = get_string('fullnameuser');
+
 $extrafields = get_extra_user_fields($context);
-// $tableheaders = array(get_string('userpic'), get_string('fullnameuser'));
-$tableheaders = array(get_string('fullnameuser'));
 if ($mode === MODE_BRIEF) {
     foreach ($extrafields as $field) {
         $tablecolumns[] = $field;
@@ -295,28 +288,18 @@ if ($mode === MODE_BRIEF) {
     }
 }
 
-if ($bulkoperations) {
-// We want the checkbox as the first column.
-//array_unshift( $tableheaders, get_string('select'));
-array_unshift( $tableheaders, 'X');
-//array_unshift( $tablecolumns, 'select');
-array_unshift( $tablecolumns, 'X');
-    //$tablecolumns[] = 'select';
-    //$tableheaders[] = get_string('select');
-}
-
-$table = new flexible_table('user-index-participants-'.$course->id);
+$table = new flexible_table('user-index-parents-'.$course->id);
 $table->define_columns($tablecolumns);
 $table->define_headers($tableheaders);
 $table->define_baseurl($baseurl->out());
-
+$table->sortable(true);
 $table->no_sorting('roles');
 $table->no_sorting('groups');
 $table->no_sorting('groupings');
 $table->no_sorting('select');
 
 $table->set_attribute('cellspacing', '0');
-$table->set_attribute('id', 'participants');
+$table->set_attribute('id', 'parents');
 $table->set_attribute('class', 'generaltable generalbox');
 
 $table->set_control_variables(array(
@@ -405,27 +388,11 @@ if ($table->get_sql_sort()) {
 
 $matchcount = $DB->count_records_sql("SELECT COUNT(parent.id) $from $where", $params);
 
-//MAXP $table->initialbars(true);
+$table->initialbars(true);
 $table->pagesize($perpage, $matchcount);
 
 // List of users at the current visible page - paging makes it relatively short.
 $userlist = $DB->get_recordset_sql("$select $from $where $sort", $params, $table->get_page_start(), $table->get_page_size());
-
-// If there are multiple Roles in the course, then show a drop down menu for switching.
-/*if (count($rolenames) > 1) {
-    echo '<div class="rolesform">';
-    echo '<label for="rolesform_jump">'.get_string('currentrole', 'role').'&nbsp;</label>';
-    echo $OUTPUT->single_select($rolenamesurl, 'roleid', $rolenames, $roleid, null, 'rolesform');
-    echo '</div>';
-
-} else if (count($rolenames) == 1) {
-    // when all users with the same role - print its name
-    echo '<div class="rolesform">';
-    echo get_string('role').get_string('labelsep', 'langconfig');
-    $rolename = reset($rolenames);
-    echo $rolename;
-    echo '</div>';
-}*/
 
 if ($roleid > 0) {
     $a = new stdClass();
@@ -445,40 +412,30 @@ if ($roleid > 0) {
 
     $heading .= ": $a->number";
 
-    //if (user_can_assign($context, $roleid)) {
-    //    $heading .= ' <a href="'.$CFG->wwwroot.'/'.$CFG->admin.'/roles/assign.php?roleid='.$roleid.'&amp;contextid='.$context->id.'">';
-    //    $heading .= '<img src="'.$OUTPUT->pix_url('i/edit') . '" class="icon" alt="" /></a>';
-    //}
     echo $OUTPUT->heading($heading, 3);
 } else {
-    if ($course->id != SITEID && has_capability('moodle/course:enrolreview', $context)) {
+    if (has_capability('moodle/course:enrolreview', $context)) {
         $editlink = $OUTPUT->action_icon(new moodle_url('/enrol/users.php', array('id' => $course->id)),
                                          new pix_icon('t/edit', get_string('edit')));
     } else {
         $editlink = '';
     }
-    if ($course->id == SITEID and $roleid < 0) {
-        $strallparticipants = get_string('allsiteusers', 'role');
-    } else {
-        $strallparticipants = get_string('allparticipants');
-    }
+    $strallparents = get_string('allparents', 'local_parents');
     if ($matchcount < $totalcount) {
-        echo $OUTPUT->heading($strallparticipants.get_string('labelsep', 'langconfig').$matchcount.'/'.$totalcount . $editlink, 3);
+        echo $OUTPUT->heading($strallparents.get_string('labelsep', 'langconfig').$matchcount.'/'.$totalcount . $editlink, 3);
     } else {
-        echo $OUTPUT->heading($strallparticipants.get_string('labelsep', 'langconfig').$matchcount . $editlink, 3);
+        echo $OUTPUT->heading($strallparents.get_string('labelsep', 'langconfig').$matchcount . $editlink, 3);
     }
 }
 
-
 if ($bulkoperations) {
-    echo '<form action="action_redir.php" method="post" id="participantsform">';
+    echo '<form action="action_redir.php" method="post" id="parentsform">';
     echo '<div>';
     echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
     echo '<input type="hidden" name="returnto" value="'.s($PAGE->url->out(false)).'" />';
 }
 
 if ($mode === MODE_USERDETAILS) {    // Print simple listing
-    // echo 'MODE_USERDETAILS......';
     if ($totalcount < 1) {
         echo $OUTPUT->heading(get_string('nothingtodisplay'));
     } else {
@@ -489,11 +446,9 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
             $strall = get_string('all');
             $alpha  = explode(',', get_string('alphabet', 'langconfig'));
 
-            /* MAXP Pas capable de faire fonctionner le tri sur premiere lettre
-            // Bar of first initials
-
+            // Bar of first initials.
             echo '<div class="initialbar firstinitial">'.get_string('firstname').' : ';
-            if(!empty($firstinitial)) {
+            if (!empty($firstinitial)) {
                 echo '<a href="'.$baseurl->out().'&amp;sifirst=">'.$strall.'</a>';
             } else {
                 echo '<strong>'.$strall.'</strong>';
@@ -507,10 +462,9 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
             }
             echo '</div>';
 
-            // Bar of last initials
-
+            // Bar of last initials.
             echo '<div class="initialbar lastinitial">'.get_string('lastname').' : ';
-            if(!empty($lastinitial)) {
+            if (!empty($lastinitial)) {
                 echo '<a href="'.$baseurl->out().'&amp;silast=">'.$strall.'</a>';
             } else {
                 echo '<strong>'.$strall.'</strong>';
@@ -523,7 +477,6 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
                 }
             }
             echo '</div>';
-            */
 
             $pagingbar = new paging_bar($matchcount, intval($table->get_page_start() / $perpage), $perpage, $baseurl);
             $pagingbar->pagevar = 'spage';
@@ -533,18 +486,17 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
         if ($matchcount > 0) {
             $usersprinted = array();
             foreach ($userlist as $user) {
-                echo $user->id . "<br/>";
-                if (in_array($user->id, $usersprinted)) { /// Prevent duplicates by r.hidden - MDL-13935
+                if (in_array($user->id, $usersprinted)) { // Prevent duplicates by r.hidden - MDL-13935
                     continue;
                 }
-                $usersprinted[] = $user->id; /// Add new user to the array of users printed
+                $usersprinted[] = $user->id; // Add new user to the array of users printed
 
                 context_helper::preload_from_record($user);
 
                 $context = context_course::instance($course->id);
                 $usercontext = context_user::instance($user->id);
 
-                /// Get the hidden field list
+                // Get the hidden field list.
                 if (has_capability('moodle/course:viewhiddenuserfields', $context)) {
                     $hiddenfields = array();
                 } else {
@@ -567,7 +519,7 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
                 if (!empty($user->role)) {
                     $row->cells[1]->text .= get_string('role').get_string('labelsep', 'langconfig').$user->role.'<br />';
                 }
-                if ($user->maildisplay == 1 or ($user->maildisplay == 2 and ($course->id != SITEID) and !isguestuser()) or
+                if ($user->maildisplay == 1 or ($user->maildisplay == 2 and !isguestuser()) or
                             has_capability('moodle/course:viewhiddenuserfields', $context) or
                             in_array('email', $extrafields)) {
                     $row->cells[1]->text .= get_string('email').get_string('labelsep', 'langconfig').html_writer::link("mailto:$user->email", $user->email) . '<br />';
@@ -689,7 +641,6 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
                     $data[] = implode(', ', array_map('s', $userlist_extra[$user->id]['gping']));
                 }
             }
-
             $table->add_data($data);
         }
     }
@@ -723,20 +674,20 @@ if ($bulkoperations) {
 }
 
 if (has_capability('moodle/site:viewparticipants', $context) && $totalcount > ($perpage*3)) {
-    echo '<form action="parents.php" class="searchform"><div><input type="hidden" name="id" value="'.$course->id.'" />'.get_string('search').':&nbsp;'."\n";
+    echo '<form action="index.php" class="searchform"><div><input type="hidden" name="id" value="'.$course->id.'" />'.get_string('search').':&nbsp;'."\n";
     echo '<input type="text" name="search" value="'.s($search).'" />&nbsp;<input type="submit" value="'.get_string('search').'" /></div></form>'."\n";
 }
 
 $perpageurl = clone($baseurl);
 $perpageurl->remove_params('perpage');
-/* if ($perpage == SHOW_ALL_PAGE_SIZE) {
+if ($perpage == SHOW_ALL_PAGE_SIZE) {
     $perpageurl->param('perpage', DEFAULT_PAGE_SIZE);
     echo $OUTPUT->container(html_writer::link($perpageurl, get_string('showperpage', '', DEFAULT_PAGE_SIZE)), array(), 'showall');
 
 } else if ($matchcount > 0 && $perpage < $matchcount) {
     $perpageurl->param('perpage', SHOW_ALL_PAGE_SIZE);
     echo $OUTPUT->container(html_writer::link($perpageurl, get_string('showall', '', $matchcount)), array(), 'showall');
-}*/
+}
 
 // Userlist.
 echo '</div>';  

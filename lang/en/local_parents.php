@@ -1,4 +1,5 @@
 <?php
+$string['allparents'] = 'All parents';
 $string['backtoediting'] = 'Back to editing';
 $string['coursemessageparents'] = 'Message to parents of course users';
 $string['childdepartment'] = 'School';
@@ -18,6 +19,7 @@ $string['link_name_desc'] = 'Link that appears in the tree';
 $string['noparentsselected'] = 'There is no parents selected.';
 $string['message'] = 'Message';
 $string['nogradeselected'] = 'Please check at least one grading component';
+$string['noparents'] = 'No parent found for this course';
 $string['parent_role'] = 'Parent Role';
 $string['parent_role_desc'] = 'Role representing the parents';
 $string['parents'] = 'Parents';

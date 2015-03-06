@@ -60,7 +60,7 @@ if (!array_key_exists($id, $SESSION->emailtoparents)) {
 $link = null;
 if (has_capability('moodle/course:viewparticipants', $coursecontext) ||
         has_capability('moodle/site:viewparticipants', $systemcontext)) {
-    $link = new moodle_url("/local/parents/parents.php", array('id' => $course->id));
+    $link = new moodle_url("/local/parents/index.php", array('id' => $course->id));
 }
 $strtitle = get_string('emailgradesadd', 'local_parents');
 
@@ -101,7 +101,7 @@ if (empty($action)) {
         'from' => $USER->email));
 
     if ($emailgradeseditform->is_cancelled()) {
-        redirect(new moodle_url('parents.php', array('id' => $id, 'filtertype' => 'course')));
+        redirect(new moodle_url('index.php', array('id' => $id, 'filtertype' => 'course')));
     } else if (($data = $emailgradeseditform->get_data()) && isset($data->submitbutton)) {
         echo $OUTPUT->header();
         $emailgradesreviewform = new local_parents_review_emailgrades_form('emailgrades.php',

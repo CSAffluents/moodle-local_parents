@@ -1,4 +1,5 @@
 <?php
+$string['allparents'] = 'Tous les parents';
 $string['backtoediting'] = 'Retour à l\'édition';
 $string['coursemessageparents'] = 'Message aux parents des participants du cours';
 $string['childdepartment'] = 'École';
@@ -18,6 +19,7 @@ $string['link_name_desc'] = 'Lien qui apparaît dans l\'arborescence';
 $string['noparentsselected'] = 'Il n\'y a pas de parents sélectionnés.';
 $string['message'] = 'Message';
 $string['nogradeselected'] = 'Veuillez svp cocher au moins un élément d\'évaluation';
+$string['noparents'] = 'Aucun parent trouvé dans ce cours';
 $string['parent_role'] = 'Rôle parent';
 $string['parent_role_desc'] = 'Rôle qui représente les parents';
 $string['parents'] = 'Parents';

@@ -116,7 +116,7 @@ if ($course->id == SITEID) {
 
 $link = null;
 if (has_capability('moodle/course:viewparticipants', $coursecontext) || has_capability('moodle/site:viewparticipants', $systemcontext)) {
-    $link = new moodle_url("/local/parents/parents.php", array('id'=>$course->id));
+    $link = new moodle_url("/local/parents/index.php", array('id'=>$course->id));
 }
 $PAGE->navbar->add(get_string('parents', 'local_parents'), $link);
 $PAGE->navbar->add($strtitle);
