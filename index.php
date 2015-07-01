@@ -429,7 +429,7 @@ if ($roleid > 0) {
 }
 
 if ($bulkoperations) {
-    echo '<form action="action_redir.php" method="post" id="parentsform">';
+    echo '<form action="action_redir.php" method="post" id="participantsform">';
     echo '<div>';
     echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
     echo '<input type="hidden" name="returnto" value="'.s($PAGE->url->out(false)).'" />';
