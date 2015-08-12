@@ -276,12 +276,10 @@ if ($bulkoperations && $mode === MODE_BRIEF) {
 $tablecolumns[] = 'fullname';
 $tableheaders[] = get_string('fullnameuser');
 
-$extrafields = get_extra_user_fields($context);
+$email = 'email';
 if ($mode === MODE_BRIEF) {
-    foreach ($extrafields as $field) {
-        $tablecolumns[] = $field;
-        $tableheaders[] = get_user_field_name($field);
-    }
+    $tablecolumns[] = $email;
+    $tableheaders[] = get_user_field_name($email);
     foreach ($extrachildfields as $field) {
         $tablecolumns[] = $field;
         $tableheaders[] = $extrachildfieldsdesc[$field];
@@ -520,18 +518,8 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
                     $row->cells[1]->text .= get_string('role').get_string('labelsep', 'langconfig').$user->role.'<br />';
                 }
                 if ($user->maildisplay == 1 or ($user->maildisplay == 2 and !isguestuser()) or
-                            has_capability('moodle/course:viewhiddenuserfields', $context) or
-                            in_array('email', $extrafields)) {
+                            has_capability('moodle/course:viewhiddenuserfields', $context)) {
                     $row->cells[1]->text .= get_string('email').get_string('labelsep', 'langconfig').html_writer::link("mailto:$user->email", $user->email) . '<br />';
-                }
-                foreach ($extrafields as $field) {
-                    if ($field === 'email') {
-                        // Skip email because it was displayed with different logic above.
-                        // This is because this page is intended for students too.
-                        continue;
-                    }
-                    $row->cells[1]->text .= get_user_field_name($field) .
-                            get_string('labelsep', 'langconfig') . s($user->{$field}) . '<br />';
                 }
 
                 foreach ($extrachildfields as $field) {
@@ -613,9 +601,7 @@ if ($mode === MODE_USERDETAILS) {    // Print simple listing
             }
 
             if ($mode === MODE_BRIEF) {
-                foreach ($extrafields as $field) {
-                    $data[] = $user->{$field};
-                }
+                $data[] = $user->{$email};
                 foreach ($extrachildfields as $field) {
                     $data[] = $user->{$field};
                 }
