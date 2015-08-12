@@ -28,13 +28,13 @@ require_once($CFG->libdir.'/filelib.php');
 
 define('USER_SMALL_CLASS', 20);   // Below this is considered small
 define('USER_LARGE_CLASS', 200);  // Above this is considered large
-define('DEFAULT_PAGE_SIZE', 3);
-define('SHOW_ALL_PAGE_SIZE', 5000);
+define('DEFAULT_PAGE_SIZE', 10);
+define('SHOW_ALL_PAGE_SIZE', 1000);
 define('MODE_BRIEF', 0);
 define('MODE_USERDETAILS', 1);
 
 $page         = optional_param('page', 0, PARAM_INT);                     // which page to show
-$perpage      = optional_param('perpage', DEFAULT_PAGE_SIZE, PARAM_INT);  // how many per page
+$perpage      = optional_param('perpage', SHOW_ALL_PAGE_SIZE, PARAM_INT);  // how many per page
 $mode         = optional_param('mode', NULL, PARAM_INT);                  // use the MODE_ constants
 $accesssince  = optional_param('accesssince',0,PARAM_INT);                // filter by last access. -1 = never
 $search       = optional_param('search','',PARAM_RAW);                    // make sure it is processed with p() or s() when sending to output!
@@ -288,7 +288,7 @@ if ($mode === MODE_BRIEF) {
     }
 }
 
-$table = new flexible_table('user-index-parents-'.$course->id);
+$table = new \local_parents\parents_table('user-index-parents-'.$course->id);
 $table->define_columns($tablecolumns);
 $table->define_headers($tableheaders);
 $table->define_baseurl($baseurl->out());
