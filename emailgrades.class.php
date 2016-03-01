@@ -69,26 +69,57 @@ class local_parents_emailgrades extends grade_export {
     /**
      * Constructor should set up all the private variables ready to be pulled.
      *
+     * This constructor used to accept the individual parameters as separate arguments, in
+     * 2.8 this was simplified to just accept the data from the moodle form.
+     *
      * @param object $course The course object containing the user grades to email.
-     * @param string $from The email address of the sender of the email.
-     * @param string $subject The subject of the email.
-     * @param string $signature The signature of the sender of the email.
-     * @param array $parentlist The list of users who will receive the email.
-     * @param string $itemlist comma separated list of item ids, empty means all
-     * @param boolean $exportfeedback If the grades feedback has to be included in the email.
-     * @param int $displaytype The grades display type of the grades in the email.
-     * @param int $decimalpoints The number of decimal points of the grades in the email.
-     * @param boolean $showmaxgrade If we show the max possible grade for a grade item.
+     * @param stdClass|null $formdata
      */
-    public function __construct($course, $from, $subject, $messageprefix, $signature, $parentlist = '', $itemlist = '',
-            $exportfeedback = false, $displaytype = GRADE_DISPLAY_TYPE_REAL, $decimalpoints = 2, $showmaxgrade = true) {
-        parent::__construct($course, 0, $itemlist, $exportfeedback, false, $displaytype, $decimalpoints, false, false);
-        $this->from = $from;
-        $this->subject = $subject;
-        $this->signature = $signature;
-        $this->parentlist = $parentlist;
-        $this->messageprefix = $messageprefix;
-        $this->showmaxgrade = $showmaxgrade;
+    public function __construct($course, $formdata) {
+        parent::__construct($course, 0, $formdata);
+    }
+
+    /**
+     * Init object based using data from form
+     * @param object $formdata
+     */
+    public function process_form($formdata) {
+        parent::process_form($formdata);
+
+        if (isset($formdata->from)) {
+            $this->from = $formdata->from;
+        }
+
+        if (isset($formdata->subject)) {
+            $this->subject = $formdata->subject;
+        }
+
+        if (isset($formdata->messageprefix)) {
+            $this->messageprefix = $formdata->messageprefix;
+        }
+
+        if (isset($formdata->signature)) {
+            $this->signature = $formdata->signature;
+        }
+
+        if (isset($formdata->parentlist)) {
+            $this->parentlist = $formdata->parentlist;
+        }
+
+        if (isset($formdata->showmaxgrade)) {
+            $this->showmaxgrade = $formdata->showmaxgrade;
+        }
+
+        // Redefine items if it comes from preview instead of edit form.
+        if (!empty($formdata->itemsids) && $formdata->itemsids != '-1' && !isset($formdata->itemids)) {
+            $this->columns = array();
+            $itemids = explode(',', $formdata->itemsids);
+            foreach ($itemids as $itemid) {
+                if (array_key_exists($itemid, $this->grade_items)) {
+                    $this->columns[$itemid] =& $this->grade_items[$itemid];
+                }
+            }
+        }
     }
 
     /**
@@ -110,7 +141,7 @@ class local_parents_emailgrades extends grade_export {
         // For each parent, compose the message body and email it.
         foreach ($parents as $parent) {
             $htmlbody = $this->compose_complete_message($parentsmessage[$parent->id]);
-            $body = strip_tags($htmlbody);
+            $body = html_to_text($htmlbody);
             if (!email_to_user($parent, $USER, $this->subject, $body, $htmlbody)) {
                 $result = false;
             }
@@ -154,6 +185,12 @@ class local_parents_emailgrades extends grade_export {
         $parentsmessage = array();
         $showallgrades = $this->showmaxgrade && $this->displaytype != GRADE_DISPLAY_TYPE_LETTER;
 
+        $displaytypes = array(
+            GRADE_DISPLAY_TYPE_REAL => 'real',
+            GRADE_DISPLAY_TYPE_PERCENTAGE => 'percentage',
+            GRADE_DISPLAY_TYPE_LETTER => 'letter'
+        );
+
         // Print all the lines of data.
         $geub = new grade_export_update_buffer();
         $gui = new graded_users_iterator($this->course, $this->columns);
@@ -186,13 +223,11 @@ class local_parents_emailgrades extends grade_export {
                     $geub->track($grade);
                 }
                 $row = array();
-                $row[] = $this->format_column_name($gradeitem);
-                $row[] = $this->format_grade($userdata->grades[$itemid]);
-
+                $row[] = $this->format_column_name($gradeitem, false, $displaytypes[$this->displaytype]);
+                $row[] = $this->format_grade($userdata->grades[$itemid], $this->displaytype);
                 if ($showallgrades) {
                     $row[] = $this->format_max_grade($gradeitem);
                 }
-                
                 if ($this->export_feedback) {
                     $row[] = $this->format_feedback($userdata->feedbacks[$itemid]);
                 }
@@ -281,15 +316,14 @@ class local_parents_emailgrades extends grade_export {
 
     /**
      * Returns string representation of final grade.
-     * Override completely this method to add localized decimal separator
-     * and to add the scale position if the scale is used.
+     * Override completely this method to add the scale position if the scale is used.
      *
      * @param grade_grade $grade instance of grade_grade class
+     * @param integer $gradedisplayconst grade display type constant.
      * @return string The formatted grade.
      */
-    public function format_grade($grade) {
-        $formattedgrade = grade_format_gradevalue($grade->finalgrade, $this->grade_items[$grade->itemid], true, $this->displaytype,
-                $this->decimalpoints);
+    public function format_grade($grade, $gradedisplayconst = NULL) {
+        $formattedgrade = parent::format_grade($grade, $gradedisplayconst);
         $gradeitem = $this->grade_items[$grade->itemid];
         if ($gradeitem->gradetype == GRADE_TYPE_SCALE) {
             $formattedgrade = $this->format_with_scale_position($formattedgrade, $gradeitem);

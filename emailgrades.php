@@ -104,8 +104,7 @@ if (empty($action)) {
         redirect(new moodle_url('index.php', array('id' => $id, 'filtertype' => 'course')));
     } else if (($data = $emailgradeseditform->get_data()) && isset($data->submitbutton)) {
         echo $OUTPUT->header();
-        $emailgradesreviewform = new local_parents_review_emailgrades_form('emailgrades.php',
-                array('course' => $course));
+        $emailgradesreviewform = new local_parents_review_emailgrades_form('emailgrades.php', array('course' => $course));
         $data->messageprefix = $data->messageprefix['text'];
         $data->signature = $data->signature['text'];
         $emails = explode(',', $data->parentlist);
@@ -119,9 +118,7 @@ if (empty($action)) {
             $data->itemsids = '-1';
         }
 
-        $emailgrades = new local_parents_emailgrades($course, $data->from, $data->subject, $data->messageprefix,
-                $data->signature, $data->parentlist, $data->itemsids, $data->export_feedback, $data->display,
-                $data->decimals, $data->showmaxgrade);
+        $emailgrades = new local_parents_emailgrades($course, $data);
 
         $data->message = $emailgrades->display_message_preview($firstemailid);
 
@@ -151,9 +148,7 @@ $emailgradesreviewform = new local_parents_review_emailgrades_form('emailgrades.
 if ($emailgradesreviewform->is_cancelled()) {
     redirect($url);
 } else if ($data = $emailgradesreviewform->get_data()) {
-    $emailgrades = new local_parents_emailgrades($course, $data->from, $data->subject, $data->messageprefix,
-            $data->signature, $data->parentlist, $data->itemsids, $data->export_feedback, $data->display,
-            $data->decimals, $data->showmaxgrade);
+    $emailgrades = new local_parents_emailgrades($course, $data);
 
     if (!isset($data->refreshpreview)) {
         echo $OUTPUT->header();

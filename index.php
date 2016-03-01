@@ -260,9 +260,7 @@ if ($currentgroup and (!$isseparategroups or has_capability('moodle/site:accessa
 }
 
 // Define a table showing a list of users in the current role selection.
-//$extrachildfields = array( 'childfullname', 'childemail', 'childusername', 'childdepartment', 'childinstitution');
 $extrachildfields = array( 'childfullname', 'childemail', 'childusername');
-//$extrachildfieldsdesc = array( 'childfullname' => get_string('childfullname','local_parents'), 'childemail' => get_string('childemail','local_parents'), 'childusername' => get_string('childusername','local_parents'), 'childdepartment' => get_string('childdepartment','local_parents'), 'childinstitution' => get_string('childinstitution','local_parents'));
 $extrachildfieldsdesc = array( 'childfullname' => get_string('childfullname','local_parents'), 'childemail' => get_string('childemail','local_parents'), 'childusername' => get_string('childusername','local_parents'));
 
 $tablecolumns = array();
@@ -295,7 +293,6 @@ $table->no_sorting('roles');
 $table->no_sorting('groups');
 $table->no_sorting('groupings');
 $table->no_sorting('select');
-
 $table->set_attribute('cellspacing', '0');
 $table->set_attribute('id', 'parents');
 $table->set_attribute('class', 'generaltable generalbox');
@@ -398,12 +395,12 @@ if ($roleid > 0) {
     $a->role = $rolenames[$roleid];
     $heading = format_string(get_string('xuserswiththerole', 'role', $a));
 
-    if ($currentgroup and $group) {
+    if ($currentgroup and !empty($group)) {
         $a->group = $group->name;
         $heading .= ' ' . format_string(get_string('ingroup', 'role', $a));
     }
 
-    if ($accesssince) {
+    if ($accesssince && !empty($timeoptions[$accesssince])) {
         $a->timeperiod = $timeoptions[$accesssince];
         $heading .= ' ' . format_string(get_string('inactiveformorethan', 'role', $a));
     }

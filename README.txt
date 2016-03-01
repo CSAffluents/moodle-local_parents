@@ -9,7 +9,7 @@ This listing is derived from participant list but I had to remove some feature (
 PREREQUISIS
 -----------
 A role that can be assign to user context must exist (ex: parent or mentor role).
-For more details about it: http://docs.moodle.org/27/en/Parent_role
+For more details about it: http://docs.moodle.org/29/en/Parent_role
 
 INSTALLATION
 ------------

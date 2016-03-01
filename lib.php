@@ -22,7 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-function local_parents_extends_navigation($root) {
+function local_parents_extend_navigation($root) {
     global $COURSE, $PAGE, $SITE;
 
     if (!get_config('local_parents', 'version')) {
