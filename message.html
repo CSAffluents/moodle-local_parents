@@ -45,7 +45,8 @@
                 echo '<img src="'.$OUTPUT->pix_url('t/emailno') . '" alt="'.$error.'" class="iconsmall" title="'.$error.'"/>';
                 unset($error);
             }
-            echo '</td><td><input type="submit" onClick="this.form.deluser.value='.$user->id.';" value="' . get_string('remove') . '" /></td></tr>';
+            echo '</td><td><input type="submit" onClick="this.form.deluser.value='.$user->id.';" value="' . get_string('remove') .
+                '" /></td></tr>';
         }
     }
     else {

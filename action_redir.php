@@ -17,9 +17,9 @@
 /**
  * Wrapper script redirecting user operations to correct destination.
  *
- * @copyright 1999 Martin Dougiamas  http://dougiamas.com
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @package user
+ * @package   local_parents
+ * @copyright 2016 Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once("../../config.php");
@@ -27,9 +27,9 @@ require_once("../../config.php");
 $formaction = required_param('formaction', PARAM_FILE);
 $id = required_param('id', PARAM_INT);
 
-$PAGE->set_url('/local/parents/action_redir.php', array('formaction'=>$formaction,'id'=>$id));
+$PAGE->set_url('/local/parents/action_redir.php', array('formaction' => $formaction, 'id' => $id));
 
-// Add every page will be redirected by this script
+// Add every page will be redirected by this script.
 $actions = array(
     'messageselect.php',
     'emailgrades.php',

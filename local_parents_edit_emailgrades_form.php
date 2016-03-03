@@ -37,6 +37,10 @@ require_once($CFG->libdir.'/gradelib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class local_parents_edit_emailgrades_form extends moodleform {
+
+    /**
+     * The form definition.
+     */
     public function definition() {
         global $CFG, $USER, $SESSION;
 
@@ -113,8 +117,8 @@ class local_parents_edit_emailgrades_form extends moodleform {
                 // Display a delete button only if the number of users is greater than 1.
                 if ($nbparents > 1) {
                     $remove = new html_table_cell();
-                    $remove->text = html_writer::empty_tag('input', array('type' => 'submit', 'onClick' =>
-                        'this.form.deluser.value=' . $user->id . ';', 'value' => get_string('remove')));
+                    $remove->text = html_writer::empty_tag('input', array('type' => 'submit',
+                        'onClick' => 'this.form.deluser.value=' . $user->id . ';', 'value' => get_string('remove')));
                     $table->data[] = new html_table_row(array($fullname, $email, $remove));
                 } else {
                     $email->colspan = 2;
@@ -144,21 +148,16 @@ class local_parents_edit_emailgrades_form extends moodleform {
         $gseq = new grade_seq($course->id, $switch);
 
         if ($gradeitems = $gseq->items) {
-
             $canviewhidden = has_capability('moodle/grade:viewhidden', context_course::instance($course->id));
-
             foreach ($gradeitems as $gradeitem) {
                 // Is the grade_item hidden? If so, can the user see hidden grade_items?
                 if ($gradeitem->is_hidden() && !$canviewhidden) {
                     continue;
                 }
-
                 $mform->addElement('advcheckbox', 'itemids[' . $gradeitem->id . ']', $gradeitem->get_name(), null,
                         array('group' => 1));
-
                 $mform->setDefault('itemids[' . $gradeitem->id . ']', 0);
             }
-            
         }
 
         $mform->addElement('hidden', 'itemsids');

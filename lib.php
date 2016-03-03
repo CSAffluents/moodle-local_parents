@@ -22,7 +22,13 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-function local_parents_extend_navigation($root) {
+/**
+ * Extends the global navigation tree by adding parents nodes in a course navigation.
+ *
+ * @param navigation_node $root
+ * @return void
+ */
+function local_parents_extend_navigation(navigation_node $root) {
     global $COURSE, $PAGE, $SITE;
 
     if (!get_config('local_parents', 'version')) {
@@ -31,15 +37,15 @@ function local_parents_extend_navigation($root) {
 
     // Not on the home page.
     if ($COURSE->id != $SITE->id) {
-	// Verify that user can view this link.
+        // Verify that user can view this link.
         if (has_capability('moodle/course:manageactivities', $PAGE->context)) {
-	    // Retrieve course node, then create the node to add and finally, insert the new node in second place.
-	    $coursenode = $root->find($COURSE->id,null);
-        $parents = $coursenode->create(get_config('local_parents','link_name'),
-                new moodle_url('/local/parents/index.php', array('filtertype' => 'course', 'id' => $COURSE->id)),
-                navigation_node::TYPE_CONTAINER);
-	    $array=$coursenode->get_children_key_list();
-	    $coursenode->add_node($parents,$array[1]);
+            // Retrieve course node, then create the node to add and finally, insert the new node in second place.
+            $coursenode = $root->find($COURSE->id, null);
+            $parents = $coursenode->create(get_config('local_parents', 'link_name'),
+                    new moodle_url('/local/parents/index.php', array('filtertype' => 'course', 'id' => $COURSE->id)),
+                    navigation_node::TYPE_CONTAINER);
+            $array = $coursenode->get_children_key_list();
+            $coursenode->add_node($parents, $array[1]);
         }
     }
 }

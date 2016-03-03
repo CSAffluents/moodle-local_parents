@@ -40,9 +40,6 @@ class local_parents_review_emailgrades_form extends moodleform {
 
     /**
      * The form definition.
-     *
-     * @global type $USER
-     * @global type $SESSION
      */
     public function definition() {
         global $SESSION;
@@ -121,7 +118,7 @@ class local_parents_review_emailgrades_form extends moodleform {
     /**
      * Set the value of the static element based of an hidden one.
      *
-     * @param type The name of the element.
+     * @param string $name The name of the element
      */
     public function set_static_element_value($name) {
         $mform =& $this->_form;

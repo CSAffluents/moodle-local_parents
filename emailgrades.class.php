@@ -18,7 +18,7 @@
  * The local parents email grades class.
  *
  * @package   local_parents
- * @copyright 2015 Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @copyright 2016 Gilles-Philippe Leblanc <contact@gpleblanc.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,6 +28,9 @@ require_once($CFG->dirroot . '/grade/export/lib.php');
 
 /**
  * The local parents email grades class.
+ *
+ * @copyright 2015 Gilles-Philippe Leblanc <contact@gpleblanc.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class local_parents_emailgrades extends grade_export {
 
@@ -126,7 +129,8 @@ class local_parents_emailgrades extends grade_export {
      * This is an abstract method se we need to implement it but we will
      * not use it since we email the grades instead of creating a file.
      */
-    public function print_grades() {}
+    public function print_grades() {
+    }
 
     /**
      * Compose and email the grades to all parents.
@@ -322,7 +326,7 @@ class local_parents_emailgrades extends grade_export {
      * @param integer $gradedisplayconst grade display type constant.
      * @return string The formatted grade.
      */
-    public function format_grade($grade, $gradedisplayconst = NULL) {
+    public function format_grade($grade, $gradedisplayconst = null) {
         $formattedgrade = parent::format_grade($grade, $gradedisplayconst);
         $gradeitem = $this->grade_items[$grade->itemid];
         if ($gradeitem->gradetype == GRADE_TYPE_SCALE) {
@@ -337,7 +341,7 @@ class local_parents_emailgrades extends grade_export {
      * @param grade_item $gradeitem The grade item.
      * @return string The formatted max grade.
      */
-    public function format_max_grade($gradeitem) {
+    public function format_max_grade(grade_item $gradeitem) {
         if ($this->displaytype == GRADE_DISPLAY_TYPE_PERCENTAGE) {
             $grademax = "100 %";
         } else {
@@ -353,11 +357,11 @@ class local_parents_emailgrades extends grade_export {
      * Format a scale grade by adding its scale position.
      * Ex: "quite acceptable (3)" instead of "quite acceptable".
      *
-     * @param type $formattedgrade The formatted grade.
-     * @param type $gradeitem The grade item.
+     * @param string $formattedgrade The formatted grade.
+     * @param grade_item $gradeitem The grade item.
      * @return string The formatted grade with position.
      */
-    private function format_with_scale_position($formattedgrade, $gradeitem) {
+    private function format_with_scale_position($formattedgrade, grade_item $gradeitem) {
         global $DB;
         $string = $formattedgrade;
         if ($gradeitem->gradetype == GRADE_TYPE_SCALE && $formattedgrade != "-") {
