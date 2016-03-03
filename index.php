@@ -157,6 +157,7 @@ $link = new moodle_url("/local/parents/index.php", array('id' => $course->id));
 $PAGE->navbar->add(get_string('parents', 'local_parents'), $link);
 
 echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('parents', 'local_parents'));
 
 echo '<div class="userlist parentlist">';
 
@@ -206,12 +207,14 @@ if ($mycourses = enrol_get_my_courses()) {
         $coursecontext = context_course::instance($mycourse->id);
         $courselist[$mycourse->id] = format_string($mycourse->shortname, true, array('context' => $coursecontext));
     }
-    $select = new single_select($popupurl, 'id', $courselist, $course->id, array('' => 'choosedots'), 'courseform');
+    $select = new single_select($popupurl, 'id', $courselist, $course->id, null, 'courseform');
     $select->set_label(get_string('mycourses'));
     $controlstable->data[0]->cells[] = $OUTPUT->render($select);
 }
 
-$controlstable->data[0]->cells[] = groups_print_course_menu($course, $baseurl->out(), true);
+if ($groupmenu = groups_print_course_menu($course, $baseurl->out(), true)) {
+    $controlstable->data[0]->cells[] = $groupmenu;
+}
 
 $formatmenu = array( '0' => get_string('brief'),
                      '1' => get_string('userdetails'));
@@ -388,6 +391,11 @@ $table->pagesize($perpage, $matchcount);
 // List of users at the current visible page - paging makes it relatively short.
 $userlist = $DB->get_recordset_sql("$select $from $where $sort", $params, $table->get_page_start(), $table->get_page_size());
 
+$editlink = '';
+if (has_capability('moodle/course:enrolreview', $context)) {
+    $editlink = new moodle_url('/enrol/users.php', array('id' => $course->id));
+}
+
 if ($roleid > 0) {
     $a = new stdClass();
     $a->number = $totalcount;
@@ -406,19 +414,23 @@ if ($roleid > 0) {
 
     $heading .= ": $a->number";
 
+    if (!empty($editlink)) {
+        $editlink->param('role', $roleid);
+        $heading .= $OUTPUT->action_icon($editlink, new pix_icon('t/edit', get_string('edit')));
+    }
+
     echo $OUTPUT->heading($heading, 3);
 } else {
-    if (has_capability('moodle/course:enrolreview', $context)) {
-        $editlink = $OUTPUT->action_icon(new moodle_url('/enrol/users.php', array('id' => $course->id)),
-                                         new pix_icon('t/edit', get_string('edit')));
-    } else {
-        $editlink = '';
-    }
+
     $strallparents = get_string('allparents', 'local_parents');
     if ($matchcount < $totalcount) {
         echo $OUTPUT->heading($strallparents.get_string('labelsep', 'langconfig').$matchcount.'/'.$totalcount . $editlink, 3);
     } else {
         echo $OUTPUT->heading($strallparents.get_string('labelsep', 'langconfig').$matchcount . $editlink, 3);
+    }
+
+    if (!empty($editlink)) {
+        $editlink = $OUTPUT->action_icon($editlink, new pix_icon('t/edit', get_string('edit')));
     }
 }
 
@@ -577,27 +589,6 @@ if ($mode === MODE_USERDETAILS) { // Print simple listing.
                 $data[] = $user->{$email};
                 foreach ($extrachildfields as $field) {
                     $data[] = $user->{$field};
-                }
-            }
-
-            if (isset($userlist_extra) && isset($userlist_extra[$user->id])) {
-                $ras = $userlist_extra[$user->id]['ra'];
-                $rastring = '';
-                foreach ($ras AS $key=>$ra) {
-                    $rolename = $allrolenames[$ra['roleid']] ;
-                    if ($ra['ctxlevel'] == CONTEXT_COURSECAT) {
-                        $rastring .= $rolename. ' @ ' . '<a href="'.$CFG->wwwroot.'/course/category.php?id='.$ra['ctxinstanceid'].'">'.s($ra['ccname']).'</a>';
-                    } elseif ($ra['ctxlevel'] == CONTEXT_SYSTEM) {
-                        $rastring .= $rolename. ' - ' . get_string('globalrole','role');
-                    } else {
-                        $rastring .= $rolename;
-                    }
-                }
-                $data[] = $rastring;
-                if ($groupmode != 0) {
-                    // Use htmlescape with s() and implode the array.
-                    $data[] = implode(', ', array_map('s', $userlist_extra[$user->id]['group']));
-                    $data[] = implode(', ', array_map('s', $userlist_extra[$user->id]['gping']));
                 }
             }
 
